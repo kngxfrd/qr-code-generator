@@ -1,0 +1,11 @@
+.freeqr-data/
+.env
+node_modules/
+npm-debug.log*
+frontend-dist/
+staticfiles/
+db.sqlite3
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
