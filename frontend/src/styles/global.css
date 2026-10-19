@@ -1400,3 +1400,91 @@ h3 {
   .auth-page { grid-template-columns: 1fr; min-height: unset; padding: 25px 15px 40px; }.auth-card { justify-self: center; padding: 22px 18px; }.auth-aside { display: none; }.auth-card h1 { font-size: 24px; }
   .modal-card > header, .modal-body, .modal-card > footer { padding-inline: 15px; }
 }
+
+/* Responsive finishing rules: keep every route inside the viewport from compact phones to laptops. */
+html { min-width: 320px; overflow-x: clip; }
+body, #root, .workspace-layout, .public-layout, .builder-layout { width: 100%; min-width: 0; max-width: 100%; }
+img, svg, video, canvas { max-width: 100%; }
+.workspace-content, .builder-work, .builder-preview, .public-content, .auth-card, .contact-form { min-width: 0; }
+.field input, .field textarea, .field select { max-width: 100%; }
+.workspace-sidebar { overflow-y: auto; overscroll-behavior: contain; }
+.builder-footer { padding-bottom: max(11px, env(safe-area-inset-bottom)); }
+.modal-backdrop { padding: max(12px, env(safe-area-inset-top)) 12px max(12px, env(safe-area-inset-bottom)); }
+
+@media (max-width: 820px) {
+  .builder-work { grid-row: 1; }
+  .builder-preview { position: static; top: auto; grid-row: 2; padding: 16px 0 10px; }
+  .builder-preview .preview-toggle { position: static; margin: 0 auto 8px; }
+  .page-heading { align-items: flex-start; flex-direction: column; gap: 12px; }
+  .page-heading-action { width: 100%; justify-content: flex-start; }
+  .heading-actions { max-width: 100%; }
+  .phone-device { width: 148px; height: 300px; margin: 0; padding: 21px 8px 13px; transform: none; }
+  .phone-island { width: 53px; height: 13px; }
+  .phone-screen-content { gap: 9px; padding: 21px 3px 21px; }
+  .qr-art-compact { width: 112px; }
+  .filter-bar { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .filter-bar .search-field { grid-column: 1 / -1; }
+  .contact-layout { grid-template-columns: minmax(0, 1fr); max-width: 620px; }
+  .contact-copy .page-heading { margin-bottom: 17px; }
+  .auth-page { grid-template-columns: minmax(0, 440px); }
+  .auth-card { justify-self: center; }
+  .auth-aside { display: none; }
+}
+
+@media (max-width: 560px) {
+  .phone-device { width: 146px; height: 294px; padding: 20px 8px 12px; }
+  .phone-screen-content { gap: 7px; padding: 20px 4px 22px; }
+  .qr-art-compact { width: 118px; }
+  .phone-preview .phone-meta { margin: 3px 0 5px; font-size: 8px; }
+  .preview-toggle { position: static; margin: 0 auto 4px; }
+  .builder-preview .preview-toggle { position: static; margin: 0 auto 4px; }
+  .builder-grid, .design-mode { padding-inline: clamp(12px, 4vw, 18px); }
+  .builder-footer { padding-left: max(12px, env(safe-area-inset-left)); padding-right: max(12px, env(safe-area-inset-right)); }
+  .builder-footer .button { min-width: 104px; padding-inline: 10px; }
+  .builder-footer.only-next .button { min-width: 132px; }
+  .workspace-content { padding-inline: 14px; }
+  .page-heading h1 { font-size: clamp(27px, 8vw, 32px); }
+  .library-banner { gap: 8px; }
+  .banner-mark { flex: 0 0 auto; }
+  .folder-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .new-folder-card { width: 100%; }
+  .filter-bar { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .filter-bar .field { min-width: 0; }
+  .filter-bar select { padding-inline: 7px; }
+  .code-row { grid-template-columns: 40px minmax(0, 1fr); }
+  .code-thumb { width: 40px; height: 40px; }
+  .code-title { min-width: 0; flex-wrap: wrap; }
+  .code-title h3 { max-width: 100%; }
+  .code-actions { min-width: 0; }
+  .public-footer { padding-left: 16px; padding-right: 16px; }
+  .public-footer > div { justify-content: flex-start; }
+  .contact-layout { padding-left: 15px; padding-right: 15px; }
+  .auth-page { grid-template-columns: minmax(0, 1fr); padding-inline: 12px; }
+  .auth-card { padding: 21px 17px; }
+}
+
+@media (max-width: 380px) {
+  .header-actions { gap: 8px; }
+  .header-actions .button { padding-inline: 8px; font-size: 10px; }
+  .builder-grid { padding-top: 10px; }
+  .stepper-item b { font-size: 8px; }
+  .stepper-item > i { width: 11px; }
+  .type-card { min-height: 132px; padding: 12px 10px; }
+  .type-card small { max-width: 135px; }
+  .dynamic-note { flex-wrap: wrap; }
+  .dynamic-note > div { flex: 1 1 100%; }
+  .content-card-head .text-button { white-space: nowrap; }
+  .builder-footer .button { min-width: 95px; gap: 5px; padding-inline: 8px; font-size: 10px; }
+  .builder-footer.only-next .button { min-width: 122px; }
+  .choice-chip { min-width: 66px; }
+  .billing-intervals { width: 100%; }
+  .billing-intervals button { flex: 1; padding-inline: 6px; }
+  .metric-card > strong { font-size: 23px; }
+  .recent-table > div { grid-template-columns: minmax(0, 1fr) auto auto; }
+}
+
+@media (max-height: 720px) and (min-width: 821px) {
+  .builder-preview { top: 76px; }
+  .phone-preview > p, .preview-footnote { display: none; }
+  .builder-grid { padding-top: 14px; }
+}
