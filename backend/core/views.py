@@ -3,6 +3,7 @@ import hashlib
 import io
 import re
 import secrets
+import resend
 import logging
 from collections import Counter
 from datetime import timedelta
@@ -114,23 +115,43 @@ def send_account_email(user, subject, message):
 
 def issue_email_verification(user):
     code = f"{secrets.randbelow(1_000_000):06d}"
-    record, _ = EmailVerificationCode.objects.update_or_create(
-        user=user,
-        defaults={"code_hash": make_password(code), "expires_at": timezone.now() + timedelta(minutes=10), "attempts": 0},
-    )
-    try:
-        send_mail(
-            "Verify your Free QR Generator email",
-            f"Hi {user.display_name or 'there'},\n\nYour verification code is {code}. It expires in 10 minutes.\n\nIf you did not create this account, you can ignore this email.",
-            settings.DEFAULT_FROM_EMAIL,
-            [user.email],
-            fail_silently=False,
-        )
-    except Exception:
-        logger.exception("Could not send verification code to %s", user.email)
-        return False
-    return True
 
+    EmailVerificationCode.objects.update_or_create(
+        user=user,
+        defaults={
+            "code_hash": make_password(code),
+            "expires_at": timezone.now() + timedelta(minutes=10),
+            "attempts": 0,
+        },
+    )
+
+    try:
+        if not settings.RESEND_API_KEY:
+            raise ValueError("RESEND_API_KEY is not configured.")
+
+        resend.api_key = settings.RESEND_API_KEY
+
+        resend.Emails.send({
+            "from": settings.RESEND_FROM_EMAIL,
+            "to": [user.email],
+            "subject": "Verify your Free QR Generator email",
+            "text": (
+                f"Hi {user.display_name or 'there'},\n\n"
+                f"Your verification code is {code}. "
+                "It expires in 10 minutes.\n\n"
+                "If you did not create this account, "
+                "you can ignore this email."
+            ),
+        })
+
+        return True
+
+    except Exception:
+        logger.exception(
+            "Could not send verification code to %s",
+            user.email,
+        )
+        return False
 
 class HealthView(APIView):
     permission_classes = [AllowAny]
