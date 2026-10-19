@@ -41,12 +41,7 @@ SUPPORT_EMAIL = os.getenv(
     "support.togethere@gmail.com",
 )
 EMAIL_TIMEOUT = int(os.getenv("EMAIL_TIMEOUT", "10"))
-RESEND_API_KEY = os.getenv("RESEND_API_KEY", "")
 
-RESEND_FROM_EMAIL = os.getenv(
-    "RESEND_FROM_EMAIL",
-    "Free QR Generator <onboarding@resend.dev>",
-)
 
 INSTALLED_APPS = [
     "django.contrib.admin",

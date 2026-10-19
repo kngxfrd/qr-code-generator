@@ -1,8 +1,6 @@
-import { useState, type FormEvent } from 'react';
+import { useState } from 'react';
 import { ChevronDown, Mail, MessageCircle } from 'lucide-react';
-import { api } from '../api/client';
-import { useToast } from '../app/toast';
-import { Button, Field, PageHeading } from '../components/ui';
+import { PageHeading } from '../components/ui';
 
 const FAQS = [
   ['Do static QR codes expire?', 'No. A static QR code stores its destination in the pattern itself. It keeps working as long as the destination is available and the code is printed clearly.'],
@@ -27,15 +25,9 @@ export function LegalPage({ page }: { page: 'privacy' | 'terms' | 'cookies' }) {
   return <div className="public-content legal-content"><PageHeading eyebrow={copy.kicker} title={copy.title} description={copy.date} />{copy.sections.map(([title, body]) => <section key={title}><h2>{title}</h2><p>{body}</p></section>)}</div>;
 }
 
+const SUPPORT_EMAIL = 'support.togethere@gmail.com';
+const MAILTO = `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent('Free QR Generator support')}`;
+
 export function ContactPage() {
-  const { notify } = useToast();
-  const [busy, setBusy] = useState(false);
-  const [name, setName] = useState(''); const [email, setEmail] = useState(''); const [subject, setSubject] = useState(''); const [message, setMessage] = useState('');
-  const submit = async (event: FormEvent) => {
-    event.preventDefault(); setBusy(true);
-    try { await api('/api/contact', { method: 'POST', body: { name, email, subject, message } }); notify('Your note has been sent to our support inbox.'); setName(''); setEmail(''); setSubject(''); setMessage(''); }
-    catch (error) { notify(error instanceof Error ? error.message : 'Could not send your note.', 'error'); }
-    finally { setBusy(false); }
-  };
-  return <div className="contact-layout"><div className="contact-copy"><PageHeading eyebrow="WE’RE HERE TO HELP" title="Send us a note" description="Tell us what you’re trying to do or where you got stuck. A real person will read it." /><div className="contact-detail"><span><Mail size={17} /></span><div><strong>Prefer email?</strong><a href="mailto:support.togethere@gmail.com">support.togethere@gmail.com</a></div></div><div className="contact-detail"><span><MessageCircle size={17} /></span><div><strong>Tell us what’s happening</strong><p>Include the QR type and what you expected to see. Leave out passwords and private details.</p></div></div></div><form className="contact-form" onSubmit={(event) => void submit(event)}><Field label="Your name" value={name} onChange={(e) => setName(e.target.value)} required maxLength={100} /><Field label="Email address" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required /><Field label="Subject" value={subject} onChange={(e) => setSubject(e.target.value)} required maxLength={160} /><label className="field"><span className="field-label">Message</span><textarea rows={7} value={message} onChange={(e) => setMessage(e.target.value)} required minLength={10} maxLength={8000} /></label><Button type="submit" loading={busy}>Send message</Button></form></div>;
+  return <div className="contact-layout"><div className="contact-copy"><PageHeading eyebrow="WE’RE HERE TO HELP" title="Send us a note" description="Tell us what you’re trying to do or where you got stuck. A real person will read it." /><div className="contact-detail"><span><Mail size={17} /></span><div><strong>Email us</strong><a href={MAILTO}>{SUPPORT_EMAIL}</a></div></div><div className="contact-detail"><span><MessageCircle size={17} /></span><div><strong>Tell us what’s happening</strong><p>Include the QR type and what you expected to see. Leave out passwords and private details.</p></div></div></div><div className="contact-form"><a href={MAILTO} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '12px 20px', borderRadius: 10, background: '#111', color: '#fff', fontWeight: 600, textDecoration: 'none' }}><Mail size={18} /> Write us an email</a><p style={{ marginTop: 14 }}>This opens your email app with our address already filled in. If nothing opens, send your message to <strong>{SUPPORT_EMAIL}</strong> from any email account.</p></div></div>;
 }
