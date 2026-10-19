@@ -71,6 +71,17 @@ urlpatterns += [
     ),
 ]
 
+urlpatterns += [
+    re_path(
+        r"^sitemap\.xml$",
+        serve,
+        {
+            "path": "sitemap.xml",
+            "document_root": settings.FRONTEND_DIST,
+        },
+    ),
+]
+
 # Serve the React application for all remaining frontend routes.
 urlpatterns += [
     re_path(
