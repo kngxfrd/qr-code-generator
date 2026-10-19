@@ -43,7 +43,7 @@ Keep `.env` private. `.env.example` contains placeholders only. Google sign-in r
 
 Set a long random `DJANGO_SECRET_KEY`, `DJANGO_DEBUG=false`, a production `DJANGO_ALLOWED_HOSTS`, a persistent `DATABASE_URL` (PostgreSQL is supported), and `PUBLIC_ORIGIN` to the public HTTPS origin. Run migrations, build the frontend with `npm run build`, collect static assets with `python manage.py collectstatic`, and serve Django through a production WSGI/ASGI server behind HTTPS. Use a trusted reverse proxy and enable country-header analytics only if it overwrites `CF-IPCountry`.
 
-Paid plan pricing and entitlements are present, but payment checkout is intentionally not configured. Static QR codes remain available on the free plan.
+Static QR codes are sold in one-time packs of three for $2. Configure `PAYSTACK_SECRET_KEY` to enable checkout; `PAYSTACK_CURRENCY` and `PAYSTACK_USD_TO_LOCAL_RATE` control the settlement currency and conversion. The dynamic QR subscriptions remain separate. In production, use Render PostgreSQL and run migrations on deploy so paid QR credits persist.
 
 ## Main directories
 

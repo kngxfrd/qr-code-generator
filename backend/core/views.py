@@ -27,7 +27,7 @@ from rest_framework.views import APIView
 from . import paystack
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
 
-from .catalog import INTERVALS, PLANS, active_plan, code_json, folder_json, user_json
+from .catalog import INTERVALS, PLANS, STATIC_QR_PACK, active_plan, code_json, folder_json, user_json
 from .models import ContactMessage, OAuthAttempt, QRCode, QRFolder, Scan, User
 from .serializers import CodeWriteSerializer, ContactSerializer, FolderSerializer, PasswordSerializer, ProfileSerializer, SigninSerializer, SignupSerializer
 
@@ -168,7 +168,7 @@ class BillingPlansView(APIView):
 
     @extend_schema(responses={200: dict})
     def get(self, request):
-        return Response({"plans": PLANS, "intervals": INTERVALS, "paymentConfigured": paystack.configured(), "checkoutCurrency": paystack.checkout_currency()})
+        return Response({"plans": PLANS, "staticQrPack": STATIC_QR_PACK, "intervals": INTERVALS, "paymentConfigured": paystack.configured(), "checkoutCurrency": paystack.checkout_currency()})
 
 
 class BillingSubscriptionView(APIView):
@@ -288,7 +288,7 @@ class CodeListCreateView(APIView):
             return error(first_validation_error(serializer))
         values = serializer.validated_data
         if values.get("dynamic") and not has_dynamic_access(request.user):
-            return error("Dynamic QR codes and scan analytics require an active subscription. Static QR codes and downloads remain free.", status.HTTP_403_FORBIDDEN)
+            return error("Dynamic QR codes and scan analytics require an active subscription. Static QR codes are available in a 3-code pack.", status.HTTP_403_FORBIDDEN)
         if values.get("dynamic") and not can_add_dynamic(request.user):
             return error("You have reached your plan’s dynamic QR code limit.", status.HTTP_403_FORBIDDEN)
         if values.get("dynamic") and not values["payload"].lower().startswith(("https://", "http://")):
@@ -296,12 +296,19 @@ class CodeListCreateView(APIView):
         problem = svg_problem(values["svg"])
         if problem:
             return error(problem)
-        folder = request.user.folders.filter(pk=values.get("folderId")).first() if values.get("folderId") else None
-        code = QRCode.objects.create(
-            user=request.user, name=(values.get("name") or f"{values['type']} QR code").strip(), type=values["type"], payload=values["payload"],
-            fields=values.get("fields", []), svg=values["svg"], format=values.get("format") or "png", design=values.get("design", {}),
-            folder=folder, dynamic=values.get("dynamic", False),
-        )
+        with transaction.atomic():
+            owner = User.objects.select_for_update().get(pk=request.user.pk)
+            if not values.get("dynamic"):
+                if owner.static_qr_credits < 1:
+                    return error("You have no static QR credits left. Buy a 3-code pack for $2 to continue.", status.HTTP_402_PAYMENT_REQUIRED)
+                owner.static_qr_credits -= 1
+                owner.save(update_fields=["static_qr_credits"])
+            folder = owner.folders.filter(pk=values.get("folderId")).first() if values.get("folderId") else None
+            code = QRCode.objects.create(
+                user=owner, name=(values.get("name") or f"{values['type']} QR code").strip(), type=values["type"], payload=values["payload"],
+                fields=values.get("fields", []), svg=values["svg"], format=values.get("format") or "png", design=values.get("design", {}),
+                folder=folder, dynamic=values.get("dynamic", False),
+            )
         return Response({"code": code_json(code)}, status=status.HTTP_201_CREATED)
 
 
@@ -328,7 +335,7 @@ class CodeDetailView(APIView):
                 return error(problem)
         make_dynamic = values.get("dynamic", code.dynamic)
         if make_dynamic and not code.dynamic and not has_dynamic_access(request.user):
-            return error("Dynamic QR codes and scan analytics require an active subscription. Static QR codes and downloads remain free.", status.HTTP_403_FORBIDDEN)
+            return error("Dynamic QR codes and scan analytics require an active subscription. Static QR codes are available in a 3-code pack.", status.HTTP_403_FORBIDDEN)
         if make_dynamic and not code.dynamic and not can_add_dynamic(request.user):
             return error("You have reached your plan’s dynamic QR code limit.", status.HTTP_403_FORBIDDEN)
         payload = values.get("payload", code.payload)

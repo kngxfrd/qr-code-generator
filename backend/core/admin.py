@@ -7,9 +7,9 @@ from .models import ContactMessage, OAuthAttempt, QRCode, QRFolder, Scan, User
 @admin.register(User)
 class FreeQRUserAdmin(UserAdmin):
     ordering = ("email",)
-    list_display = ("email", "display_name", "plan_id", "subscription_status", "is_staff", "date_joined")
+    list_display = ("email", "display_name", "static_qr_credits", "plan_id", "subscription_status", "is_staff", "date_joined")
     search_fields = ("email", "display_name")
-    fieldsets = ((None, {"fields": ("email", "password")}), ("Profile", {"fields": ("display_name", "google_sub")}), ("Subscription", {"fields": ("plan_id", "subscription_status", "billing_interval", "current_period_end")}), ("Permissions", {"fields": ("is_active", "is_staff", "is_superuser", "groups", "user_permissions")}), ("Dates", {"fields": ("last_login", "date_joined")}))
+    fieldsets = ((None, {"fields": ("email", "password")}), ("Profile", {"fields": ("display_name", "google_sub")}), ("QR credits", {"fields": ("static_qr_credits",)}), ("Subscription", {"fields": ("plan_id", "subscription_status", "billing_interval", "current_period_end")}), ("Permissions", {"fields": ("is_active", "is_staff", "is_superuser", "groups", "user_permissions")}), ("Dates", {"fields": ("last_login", "date_joined")}))
     add_fieldsets = ((None, {"classes": ("wide",), "fields": ("email", "display_name", "password1", "password2")} ),)
     filter_horizontal = ("groups", "user_permissions")
 

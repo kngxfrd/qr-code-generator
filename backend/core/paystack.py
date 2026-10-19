@@ -27,7 +27,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .catalog import PLANS, subscription_is_current
+from .catalog import PLANS, STATIC_QR_PACK, subscription_is_current
 from .models import Payment, User
 
 PAYSTACK_API = "https://api.paystack.co"
@@ -52,6 +52,8 @@ def checkout_currency():
 
 def price_for(plan_id, interval):
     """Catalog price (USD, as shown on the billing page) or None if not purchasable."""
+    if plan_id == STATIC_QR_PACK["id"] and interval == "one_time":
+        return STATIC_QR_PACK["price"]
     plan = next((p for p in PLANS if p["id"] == plan_id), None)
     if not plan or interval not in INTERVAL_DAYS:
         return None
@@ -68,7 +70,12 @@ def to_minor_units(price):
 
 
 def grant_access(payment):
-    """Give the user the plan they paid for. Must be called inside transaction.atomic()."""
+    """Fulfil a verified payment. Must be called inside transaction.atomic()."""
+    if payment.plan_id == STATIC_QR_PACK["id"]:
+        user = User.objects.select_for_update().get(pk=payment.user_id)
+        user.static_qr_credits += STATIC_QR_PACK["credits"]
+        user.save(update_fields=["static_qr_credits"])
+        return
     now = timezone.now()
     user = User.objects.select_for_update().get(pk=payment.user_id)
     # Renewing the same plan before it expires stacks on top of the remaining time.
@@ -159,7 +166,8 @@ class VerifyView(APIView):
         if not payment:
             return error("Payment not found.", status.HTTP_404_NOT_FOUND)
         payment = settle(reference)
-        return Response({"status": payment.status, "planId": payment.plan_id})
+        user = User.objects.get(pk=request.user.pk)
+        return Response({"status": payment.status, "planId": payment.plan_id, "staticQrCredits": user.static_qr_credits})
 
 
 class WebhookView(APIView):

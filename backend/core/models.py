@@ -39,6 +39,7 @@ class User(AbstractUser):
     subscription_status = models.CharField(max_length=24, default="free")
     billing_interval = models.CharField(max_length=16, blank=True, null=True)
     current_period_end = models.DateTimeField(blank=True, null=True)
+    static_qr_credits = models.PositiveIntegerField(default=0)
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []

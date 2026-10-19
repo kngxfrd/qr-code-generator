@@ -1040,6 +1040,12 @@ h3 {
   background: #fffbf2;
   font-size: 12px;
 }
+.billing-note > span { flex: 1; }
+.billing-note > .button { flex: 0 0 auto; }
+.static-qr-pack { max-width: 440px; margin: 0 0 34px; border-color: var(--blue); }
+.static-qr-pack .plan-price { margin-bottom: 6px; }
+.credit-balance { margin: 0 0 14px; color: var(--ink-soft); font-size: 12px; }
+.billing-subheading { margin: 0 0 14px; font-family: var(--display); font-size: 19px; font-weight: 500; letter-spacing: -0.02em; }
 .billing-intervals {
   width: fit-content;
   display: flex;
@@ -1432,6 +1438,9 @@ img, svg, video, canvas { max-width: 100%; }
 }
 
 @media (max-width: 560px) {
+  .billing-note { align-items: flex-start; flex-wrap: wrap; }
+  .billing-note > .button { margin-left: 26px; }
+  .static-qr-pack { max-width: 100%; }
   .phone-device { width: 146px; height: 294px; padding: 20px 8px 12px; }
   .phone-screen-content { gap: 7px; padding: 20px 4px 22px; }
   .qr-art-compact { width: 118px; }

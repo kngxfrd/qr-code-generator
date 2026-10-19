@@ -101,7 +101,7 @@ function DesignPicker({ design, setDesign }: { design: QRDesign; setDesign: (val
 }
 
 export function BuilderPage() {
-  const { user } = useAuth();
+  const { user, refresh } = useAuth();
   const { notify } = useToast();
   const navigate = useNavigate();
   const [draft, setDraft] = useState<QRDraft>(loadDraft);
@@ -130,11 +130,18 @@ export function BuilderPage() {
     try {
       const fields = Object.entries(draft.fields).map(([key, value]) => `${key}: ${value}`).filter((item) => !item.endsWith(': '));
       await api<{ code: { id: string } }>('/api/codes', { method: 'POST', body: { name: draft.name || `${draft.type} QR code`, type: draft.type.toLowerCase(), payload, fields, svg, format: 'png', design: draft.design, dynamic: draft.dynamic } });
+      await refresh();
       await downloadQr(payload, draft.design, 'png', draft.name || `${draft.type}-qr`);
       sessionStorage.removeItem('freeqr-builder-draft');
       notify('QR code saved to your workspace and downloaded.');
       navigate('/qr-codes');
-    } catch (error) { notify(error instanceof Error ? error.message : 'Could not save the QR code.', 'error'); }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Could not save the QR code.';
+      if (message.includes('static QR credits')) {
+        notify('This design is ready. Buy a 3-code pack to save and download it.', 'info');
+        navigate('/billing?required=static');
+      } else notify(message, 'error');
+    }
     finally { setSaving(false); }
   };
   const stepTitles = ['Choose a type', 'Add your content', 'Make it yours'];
@@ -143,8 +150,8 @@ export function BuilderPage() {
     <div className={`builder-grid ${draft.step === 3 ? 'design-mode' : ''}`}>
       <main className="builder-work">
         <div className="stepper">{stepTitles.map((title, index) => <div className={`stepper-item ${draft.step === index + 1 ? 'current' : draft.step > index + 1 ? 'done' : ''}`} key={title}><span>{draft.step > index + 1 ? <Check size={15} /> : index + 1}</span><b>{title}</b>{index < 2 && <i />}</div>)}</div>
-        {draft.step === 1 && <section className="type-step"><div className="step-copy"><p className="eyebrow">START WITH THE SCAN</p><h1>What should your QR code do?</h1><p>Pick a destination. You can change the look in the next step.</p></div><div className="type-grid">{TYPE_CHOICES.map(({ id, title, detail, icon: Icon }) => <button className="type-card" key={id} onClick={() => chooseType(id)}><span className="type-icon"><Icon size={24} /></span><strong>{title}</strong><small>{detail}</small><ArrowRight className="type-arrow" size={17} /></button>)}</div><div className="trust-note"><span><Check size={16} /></span>Static QR codes stay free and do not expire.</div></section>}
-        {draft.step === 2 && <section className="content-step"><div className="step-copy"><p className="eyebrow">STEP 02 · CONTENT</p><h1>Where should this take people?</h1><p>A clear destination makes a QR code useful. You can come back and change this later.</p></div><div className="content-card"><div className="content-card-head"><span className="type-icon"><QrCode size={22} /></span><div><strong>{draft.type}</strong><small>Content encoded in this QR code</small></div><button className="text-button" onClick={() => setDraftField('step', 1)}>Change type</button></div><ContentFields type={draft.type} values={draft.fields} change={changeContent} /><Field label="Code name (optional)" value={draft.name} onChange={(e) => setDraftField('name', e.target.value)} placeholder={`My ${draft.type} QR code`} maxLength={120} /></div><div className="dynamic-note"><div><strong>Need to change this link later?</strong><p>Dynamic codes can be edited and include scan analytics with a paid plan.</p></div>{user?.subscription.status === 'active' ? <label className="check-row"><input type="checkbox" checked={draft.dynamic} onChange={(e) => setDraftField('dynamic', e.target.checked)} /> Dynamic QR code</label> : <Button variant="secondary" size="sm" onClick={() => navigate('/billing')}>View plans</Button>}</div></section>}
+        {draft.step === 1 && <section className="type-step"><div className="step-copy"><p className="eyebrow">START WITH THE SCAN</p><h1>What should your QR code do?</h1><p>Pick a destination. You can change the look in the next step.</p></div><div className="type-grid">{TYPE_CHOICES.map(({ id, title, detail, icon: Icon }) => <button className="type-card" key={id} onClick={() => chooseType(id)}><span className="type-icon"><Icon size={24} /></span><strong>{title}</strong><small>{detail}</small><ArrowRight className="type-arrow" size={17} /></button>)}</div><div className="trust-note"><span><Check size={16} /></span>Static codes are $2 for a one-time pack of 3. They never expire.</div></section>}
+        {draft.step === 2 && <section className="content-step"><div className="step-copy"><p className="eyebrow">STEP 02 · CONTENT</p><h1>Where should this take people?</h1><p>A clear destination makes a QR code useful. You can come back and change this later.</p></div><div className="content-card"><div className="content-card-head"><span className="type-icon"><QrCode size={22} /></span><div><strong>{draft.type}</strong><small>Content encoded in this QR code</small></div><button className="text-button" onClick={() => setDraftField('step', 1)}>Change type</button></div><ContentFields type={draft.type} values={draft.fields} change={changeContent} /><Field label="Code name (optional)" value={draft.name} onChange={(e) => setDraftField('name', e.target.value)} placeholder={`My ${draft.type} QR code`} maxLength={120} /></div><div className="dynamic-note"><div><strong>Need to change this link later?</strong><p>Dynamic codes can be edited and include scan analytics with a paid plan.</p></div>{user?.subscription.status === 'active' ? <label className="check-row"><input type="checkbox" checked={draft.dynamic} onChange={(e) => setDraftField('dynamic', e.target.checked)} /> Dynamic QR code</label> : <Button variant="secondary" size="sm" onClick={() => navigate('/billing')}>View dynamic plans</Button>}</div></section>}
         {draft.step === 3 && <section className="design-step"><div className="step-copy"><p className="eyebrow">STEP 03 · DESIGN</p><h1>Make it yours</h1><p>Adjust the look. Your phone preview updates as you go.</p></div><DesignPicker design={draft.design} setDesign={(design) => setDraftField('design', design)} /><div className="name-card"><Field label="Give this QR a name" value={draft.name} onChange={(e) => setDraftField('name', e.target.value)} placeholder={`${draft.type} QR code`} maxLength={120} /></div></section>}
         {draft.step > 1 && <footer className="builder-footer">
           {draft.step > 1 ? <Button variant="secondary" icon={<ArrowLeft size={17} />} onClick={() => setDraftField('step', draft.step - 1)}>Back</Button> : <span />}
