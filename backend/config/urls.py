@@ -50,6 +50,29 @@ def frontend_entry(request, path=""):
     return FileResponse(entry.open("rb"), content_type="text/html; charset=utf-8")
 
 
-if settings.DEBUG:
-    urlpatterns += [re_path(r"^assets/(?P<path>.*)$", serve, {"document_root": settings.FRONTEND_DIST / "assets"})]
-urlpatterns += [re_path(r"^(?!api/|admin/|auth/|r/|static/).*$", frontend_entry)]
+# Serve Vite-built JavaScript and CSS files in production.
+urlpatterns += [
+    re_path(
+        r"^assets/(?P<path>.*)$",
+        serve,
+        {"document_root": settings.FRONTEND_DIST / "assets"},
+    ),
+]
+
+# Serve the favicon from the frontend build directory.
+urlpatterns += [
+    re_path(
+        r"^favicon\.png$",
+        serve,
+        {"document_root": settings.FRONTEND_DIST},
+    ),
+]
+
+# Serve the React application for all remaining frontend routes.
+urlpatterns += [
+    re_path(
+        r"^(?!api/|admin/|auth/|r/|static/|assets/).*$",
+        frontend_entry,
+    ),
+]
+
