@@ -11,10 +11,24 @@ PAYSTACK_SECRET_KEY = os.environ.get("PAYSTACK_SECRET_KEY", "")
 PAYSTACK_CURRENCY = os.environ.get("PAYSTACK_CURRENCY", "GHS")
 PAYSTACK_USD_TO_LOCAL_RATE = os.environ.get("PAYSTACK_USD_TO_LOCAL_RATE", "15")
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "development-only-change-this-secret-key")
-DEBUG = os.getenv("DJANGO_DEBUG", "true").lower() in {"1", "true", "yes"}
-ALLOWED_HOSTS = [host.strip() for host in os.getenv("DJANGO_ALLOWED_HOSTS", "127.0.0.1,localhost,testserver").split(",") if host.strip()]
-PUBLIC_ORIGIN = os.getenv("PUBLIC_ORIGIN", "http://127.0.0.1:3000").rstrip("/")
-QR_REDIRECT_ORIGIN = os.getenv("QR_REDIRECT_ORIGIN", "http://127.0.0.1:8000" if DEBUG else PUBLIC_ORIGIN).rstrip("/")
+DEBUG = os.getenv("DEBUG", "False").lower() in {
+    "1", "true", "yes"
+}
+ALLOWED_HOSTS = [
+    host.strip()
+    for host in os.getenv(
+        "DJANGO_ALLOWED_HOSTS",
+        "free-qr-code.site,www.free-qr-code.site,qr-code-generator-yqj1.onrender.com,127.0.0.1,localhost,testserver",
+    ).split(",")
+    if host.strip()
+]
+PUBLIC_ORIGIN = os.getenv("PUBLIC_ORIGIN", "http://127.0.0.1:3000",
+    "https://free-qr-code.site",).rstrip("/")
+QR_REDIRECT_ORIGIN = os.getenv(
+    "QR_REDIRECT_ORIGIN",
+    "http://127.0.0.1:3000",
+    "https://free-qr-code.site",
+).rstrip("/")
 
 EMAIL_BACKEND = os.getenv(
     "EMAIL_BACKEND",
@@ -111,12 +125,19 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = "Lax"
-SESSION_COOKIE_SECURE = not DEBUG
+SESSION_COOKIE_SECURE = True
 SESSION_COOKIE_AGE = 14 * 24 * 60 * 60
+SECURE_SSL_REDIRECT = True
+SECURE_PROXY_SSL_HEADER = (
+    "HTTP_X_FORWARDED_PROTO",
+    "https",
+)
 CSRF_COOKIE_HTTPONLY = False
 CSRF_COOKIE_SAMESITE = "Lax"
-CSRF_COOKIE_SECURE = not DEBUG
-CSRF_TRUSTED_ORIGINS = [PUBLIC_ORIGIN]
+CSRF_COOKIE_SECURE = True
+CSRF_TRUSTED_ORIGINS = [PUBLIC_ORIGIN,     "https://free-qr-code.site",
+    "https://www.free-qr-code.site",
+    "https://qr-code-generator-yqj1.onrender.com",]
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 TRUST_PROXY_COUNTRY_HEADER = os.getenv("TRUST_PROXY_COUNTRY_HEADER", "false").lower() == "true"
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
