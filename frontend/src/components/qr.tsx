@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import QRCodeStyling, { type DotType, type CornerSquareType, type Options as QRCodeOptions } from 'qr-code-styling';
 import type { QRDesign } from '../types';
 
-export const DEFAULT_DESIGN: QRDesign = { foreground: '#1559d6', background: '#ffffff', pattern: 'square', corners: 'square', frame: 'none', frameLabel: 'SCAN ME', logo: null, logoSize: 30 };
+export const DEFAULT_DESIGN: QRDesign = { foreground: '#000000', background: '#ffffff', pattern: 'square', corners: 'square', frame: 'none', frameLabel: 'SCAN ME', logo: null, logoSize: 30 };
 
 export function qrOptions(payload: string, design: QRDesign, size = 320): QRCodeOptions {
   const patterns: Record<string, DotType> = {
