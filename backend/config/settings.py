@@ -22,13 +22,18 @@ ALLOWED_HOSTS = [
     ).split(",")
     if host.strip()
 ]
-PUBLIC_ORIGIN = os.getenv("PUBLIC_ORIGIN", "http://127.0.0.1:3000",
-    "https://free-qr-code.site",).rstrip("/")
-QR_REDIRECT_ORIGIN = os.getenv(
-    "QR_REDIRECT_ORIGIN",
-    "http://127.0.0.1:3000",
+
+PUBLIC_ORIGIN = os.getenv(
+    "PUBLIC_ORIGIN",
     "https://free-qr-code.site",
 ).rstrip("/")
+
+
+QR_REDIRECT_ORIGIN = os.getenv(
+    "QR_REDIRECT_ORIGIN",
+    "https://free-qr-code.site",
+).rstrip("/")
+
 
 EMAIL_BACKEND = os.getenv(
     "EMAIL_BACKEND",
