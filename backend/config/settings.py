@@ -15,15 +15,32 @@ DEBUG = os.getenv("DJANGO_DEBUG", "true").lower() in {"1", "true", "yes"}
 ALLOWED_HOSTS = [host.strip() for host in os.getenv("DJANGO_ALLOWED_HOSTS", "127.0.0.1,localhost,testserver").split(",") if host.strip()]
 PUBLIC_ORIGIN = os.getenv("PUBLIC_ORIGIN", "http://127.0.0.1:3000").rstrip("/")
 QR_REDIRECT_ORIGIN = os.getenv("QR_REDIRECT_ORIGIN", "http://127.0.0.1:8000" if DEBUG else PUBLIC_ORIGIN).rstrip("/")
-SUPPORT_EMAIL = os.getenv("SUPPORT_EMAIL", "support.togethere@gmail.com")
-EMAIL_BACKEND = os.getenv("EMAIL_BACKEND", "django.core.mail.backends.smtp.EmailBackend")
-EMAIL_HOST = os.getenv("EMAIL_HOST", "")
+
+EMAIL_BACKEND = os.getenv(
+    "EMAIL_BACKEND",
+    "django.core.mail.backends.smtp.EmailBackend",
+)
+
+EMAIL_HOST = os.getenv("EMAIL_HOST", "smtp.gmail.com")
 EMAIL_PORT = int(os.getenv("EMAIL_PORT", "587"))
 EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "")
 EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
-EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "true").lower() in {"1", "true", "yes"}
-EMAIL_USE_SSL = os.getenv("EMAIL_USE_SSL", "false").lower() in {"1", "true", "yes"}
-DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", EMAIL_HOST_USER or "Free QR Generator <noreply@freeqrgenerator.com>")
+EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "true").lower() in {
+    "1", "true", "yes"
+}
+EMAIL_USE_SSL = os.getenv("EMAIL_USE_SSL", "false").lower() in {
+    "1", "true", "yes"
+}
+
+DEFAULT_FROM_EMAIL = os.getenv(
+    "DEFAULT_FROM_EMAIL",
+    EMAIL_HOST_USER or "support.togethere@gmail.com",
+)
+SUPPORT_EMAIL = os.getenv(
+    "SUPPORT_EMAIL",
+    "support.togethere@gmail.com",
+)
+
 
 INSTALLED_APPS = [
     "django.contrib.admin",
