@@ -20,48 +20,22 @@ export function AuthPage({ mode }: { mode: 'signup' | 'signin' }) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [verificationCode, setVerificationCode] = useState('');
-  const [verificationMode, setVerificationMode] = useState(false);
-  const [resending, setResending] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const onSubmit = async (event: FormEvent) => {
     event.preventDefault(); setError(''); setLoading(true);
     try {
-      if (verificationMode) {
-        const result = await api<{ user: User }>('/api/auth/verify-email', { method: 'POST', body: { email, code: verificationCode } });
-        setUser(result.user);
-        notify('Your email is verified. Welcome to Free QR Generator!');
-      } else {
-        const result = await api<{ user?: User; verificationRequired?: boolean }>(`/api/auth/${signup ? 'signup' : 'signin'}`, { method: 'POST', body: signup ? { name, email, password } : { email, password } });
-        if (result.verificationRequired) {
-          setVerificationMode(true);
-          notify('We sent a 6-digit verification code to your email.');
-          return;
-        }
-        if (!result.user) throw new Error('Could not complete sign in. Please try again.');
-        setUser(result.user);
-        notify(signup ? 'Your workspace is ready.' : 'Welcome back. A sign-in notification was sent to your email.');
-      }
+      const result = await api<{ user: User }>(`/api/auth/${signup ? 'signup' : 'signin'}`, { method: 'POST', body: signup ? { name, email, password } : { email, password } });
+      setUser(result.user);
+      notify(signup ? 'Your workspace is ready.' : 'Welcome back.');
       navigate(search.get('return') === 'builder' ? '/?resume=1' : '/qr-codes');
-    } catch (cause) {
-      const message = cause instanceof Error ? cause.message : 'Could not sign in.';
-      setError(message);
-      if (!signup && message.toLowerCase().includes('verify your email')) setVerificationMode(true);
-    }
+    } catch (cause) { setError(cause instanceof Error ? cause.message : 'Could not sign in.'); }
     finally { setLoading(false); }
   };
-  const resendCode = async () => {
-    if (!email) return setError('Enter your email address first.');
-    setError(''); setResending(true);
-    try { await api('/api/auth/verify-email/resend', { method: 'POST', body: { email } }); notify('If your account needs verification, a fresh code has been sent.'); }
-    catch (cause) { setError(cause instanceof Error ? cause.message : 'Could not resend the code.'); }
-    finally { setResending(false); }
-  };
-  return <div className="auth-page"><section className="auth-card"><div className="auth-card-brand"><span className="brand-mark"><Mail size={21} /></span><span>{verificationMode ? 'One quick check.' : signup ? 'A place for your codes.' : 'Good to see you again.'}</span></div><p className="eyebrow">FREE QR GENERATOR</p><h1>{verificationMode ? 'Verify your email' : signup ? 'Create your account' : 'Sign in to your workspace'}</h1><p className="auth-copy">{verificationMode ? `Enter the 6-digit code we sent to ${email}. The code expires in 10 minutes.` : signup ? 'Save your QR codes and keep your designs together.' : 'Your saved QR codes are waiting for you.'}</p>
-    {!verificationMode && <><GoogleButton /><div className="auth-divider"><span>or use your email</span></div></>}{error && <div className="form-alert" role="alert">{error}</div>}
-    <form className="form-stack" onSubmit={(event) => void onSubmit(event)}>{!verificationMode && signup && <Field label="Your name" name="name" autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} required minLength={1} />}{<Field label="Email address" name="email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required readOnly={verificationMode} />}{verificationMode ? <Field label="6-digit verification code" name="verification-code" type="text" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} value={verificationCode} onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))} required /> : <Field label="Password" name="password" type="password" autoComplete={signup ? 'new-password' : 'current-password'} value={password} onChange={(e) => setPassword(e.target.value)} required minLength={signup ? 10 : 1} hint={signup ? 'At least 10 characters.' : undefined} />}<Button type="submit" loading={loading} disabled={verificationMode && verificationCode.length !== 6}>{verificationMode ? 'Verify email' : signup ? 'Create account' : 'Sign in'} <ArrowRight size={17} /></Button></form>
-    {verificationMode ? <div className="auth-switch"><button className="text-button" type="button" onClick={() => void resendCode()} disabled={resending}>{resending ? 'Sending…' : 'Resend verification code'}</button> · <button className="text-button" type="button" onClick={() => { setVerificationMode(false); setVerificationCode(''); setError(''); }}>Back</button></div> : <p className="auth-switch">{signup ? 'Already have an account?' : 'New to Free QR Generator?'} <Link to={signup ? '/signin' : '/signup'}>{signup ? 'Sign in' : 'Create an account'}</Link></p>}<p className="auth-terms">By continuing, you agree to our <Link to="/terms">Terms</Link> and <Link to="/privacy">Privacy Policy</Link>.</p>
+  return <div className="auth-page"><section className="auth-card"><div className="auth-card-brand"><span className="brand-mark"><Mail size={21} /></span><span>{signup ? 'A place for your codes.' : 'Good to see you again.'}</span></div><p className="eyebrow">FREE QR GENERATOR</p><h1>{signup ? 'Create your account' : 'Sign in to your workspace'}</h1><p className="auth-copy">{signup ? 'Save your QR codes and keep your designs together.' : 'Your saved QR codes are waiting for you.'}</p>
+    <GoogleButton /><div className="auth-divider"><span>or use your email</span></div>{error && <div className="form-alert" role="alert">{error}</div>}
+    <form className="form-stack" onSubmit={(event) => void onSubmit(event)}>{signup && <Field label="Your name" name="name" autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} required minLength={1} />}{<Field label="Email address" name="email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required />}{<Field label="Password" name="password" type="password" autoComplete={signup ? 'new-password' : 'current-password'} value={password} onChange={(e) => setPassword(e.target.value)} required minLength={signup ? 10 : 1} hint={signup ? 'At least 10 characters.' : undefined} />}<Button type="submit" loading={loading}>{signup ? 'Create account' : 'Sign in'} <ArrowRight size={17} /></Button></form>
+    <p className="auth-switch">{signup ? 'Already have an account?' : 'New to Free QR Generator?'} <Link to={signup ? '/signin' : '/signup'}>{signup ? 'Sign in' : 'Create an account'}</Link></p><p className="auth-terms">By continuing, you agree to our <Link to="/terms">Terms</Link> and <Link to="/privacy">Privacy Policy</Link>.</p>
   </section><aside className="auth-aside"><div className="auth-aside-art"><div className="auth-qr-demo"><QrCodeIcon /></div><span className="demo-caption">READY WHEN YOU ARE</span></div><p>Make a code worth scanning.</p><span>Design it here. Keep it in your workspace. Print it when it’s ready.</span></aside></div>;
 }
 

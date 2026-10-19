@@ -11,7 +11,6 @@ const FAQS = [
   ['What files can I download?', 'You can download a finished QR code as PNG, SVG or JPG from the builder or your workspace.'],
   ['Are dynamic QR codes and analytics available?', 'Yes. With an active dynamic plan, each QR code uses a tracked link that redirects to your saved destination. Your workspace shows recorded scans, recent activity, device types and coarse country data where available. Monthly scan limits depend on your plan.'],
   ['Do I need an account to make a QR code?', 'You can design and preview a QR code without an account. Sign in to save it in your workspace and download it from your library later.'],
-  ['Why do I need to verify my email?', 'We send a short-lived one-time code to confirm that you can receive account messages. Enter it to activate your account. Google sign-in verifies your email through Google.'],
 ];
 
 export function FaqPage() {

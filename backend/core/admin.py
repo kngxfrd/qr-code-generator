@@ -1,15 +1,15 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 
-from .models import ContactMessage, EmailVerificationCode, OAuthAttempt, QRCode, QRFolder, Scan, User
+from .models import ContactMessage, OAuthAttempt, QRCode, QRFolder, Scan, User
 
 
 @admin.register(User)
 class FreeQRUserAdmin(UserAdmin):
     ordering = ("email",)
-    list_display = ("email", "display_name", "email_verified", "static_qr_credits", "plan_id", "subscription_status", "is_staff", "date_joined")
+    list_display = ("email", "display_name", "static_qr_credits", "plan_id", "subscription_status", "is_staff", "date_joined")
     search_fields = ("email", "display_name")
-    fieldsets = ((None, {"fields": ("email", "password")}), ("Profile", {"fields": ("display_name", "google_sub", "email_verified")}), ("QR credits", {"fields": ("static_qr_credits",)}), ("Subscription", {"fields": ("plan_id", "subscription_status", "billing_interval", "current_period_end")}), ("Permissions", {"fields": ("is_active", "is_staff", "is_superuser", "groups", "user_permissions")}), ("Dates", {"fields": ("last_login", "date_joined")}))
+    fieldsets = ((None, {"fields": ("email", "password")}), ("Profile", {"fields": ("display_name", "google_sub")}), ("QR credits", {"fields": ("static_qr_credits",)}), ("Subscription", {"fields": ("plan_id", "subscription_status", "billing_interval", "current_period_end")}), ("Permissions", {"fields": ("is_active", "is_staff", "is_superuser", "groups", "user_permissions")}), ("Dates", {"fields": ("last_login", "date_joined")}))
     add_fieldsets = ((None, {"classes": ("wide",), "fields": ("email", "display_name", "password1", "password2")} ),)
     filter_horizontal = ("groups", "user_permissions")
 
@@ -40,12 +40,6 @@ class ScanAdmin(admin.ModelAdmin):
 class OAuthAttemptAdmin(admin.ModelAdmin):
     list_display = ("state_hash", "expires_at")
     readonly_fields = ("state_hash", "nonce", "expires_at")
-
-
-@admin.register(EmailVerificationCode)
-class EmailVerificationCodeAdmin(admin.ModelAdmin):
-    list_display = ("user", "created_at", "expires_at", "attempts")
-    readonly_fields = ("user", "code_hash", "created_at", "expires_at", "attempts")
 
 
 @admin.register(ContactMessage)

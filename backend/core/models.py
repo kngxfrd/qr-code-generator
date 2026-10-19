@@ -33,7 +33,6 @@ class UserManager(BaseUserManager):
 class User(AbstractUser):
     username = None
     email = models.EmailField(unique=True)
-    email_verified = models.BooleanField(default=True)
     display_name = models.CharField(max_length=100, blank=True)
     google_sub = models.CharField(max_length=255, blank=True, unique=True, null=True)
     plan_id = models.CharField(max_length=32, default="free")
@@ -105,17 +104,6 @@ class OAuthAttempt(models.Model):
     state_hash = models.CharField(max_length=64, unique=True)
     nonce = models.CharField(max_length=64)
     expires_at = models.DateTimeField()
-
-
-class EmailVerificationCode(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="email_verification")
-    code_hash = models.CharField(max_length=128)
-    expires_at = models.DateTimeField()
-    created_at = models.DateTimeField(auto_now_add=True)
-    attempts = models.PositiveSmallIntegerField(default=0)
-
-    def __str__(self):
-        return f"Email verification for {self.user.email}"
 
 
 class ContactMessage(models.Model):

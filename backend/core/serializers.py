@@ -16,15 +16,6 @@ class SigninSerializer(serializers.Serializer):
     password = serializers.CharField(write_only=True, trim_whitespace=False)
 
 
-class EmailVerificationSerializer(serializers.Serializer):
-    email = serializers.EmailField(max_length=254)
-    code = serializers.RegexField(regex=r"^\d{6}$", max_length=6)
-
-
-class ResendVerificationSerializer(serializers.Serializer):
-    email = serializers.EmailField(max_length=254)
-
-
 class FolderSerializer(serializers.Serializer):
     name = serializers.CharField(max_length=80, trim_whitespace=True)
 

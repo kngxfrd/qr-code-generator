@@ -3,8 +3,6 @@ import hashlib
 import io
 import re
 import secrets
-import resend
-import logging
 from collections import Counter
 from datetime import timedelta
 
@@ -12,7 +10,6 @@ import requests
 from django.conf import settings
 from django.contrib.auth import authenticate, login, logout
 from django.core.mail import send_mail
-from django.contrib.auth.hashers import check_password, make_password
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
@@ -32,10 +29,8 @@ from . import paystack
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
 
 from .catalog import INTERVALS, PLANS, STATIC_QR_PACK, active_plan, code_json, folder_json, user_json
-from .models import ContactMessage, EmailVerificationCode, OAuthAttempt, QRCode, QRFolder, Scan, User
-from .serializers import CodeWriteSerializer, ContactSerializer, EmailVerificationSerializer, FolderSerializer, PasswordSerializer, ProfileSerializer, ResendVerificationSerializer, SigninSerializer, SignupSerializer
-
-logger = logging.getLogger(__name__)
+from .models import ContactMessage, OAuthAttempt, QRCode, QRFolder, Scan, User
+from .serializers import CodeWriteSerializer, ContactSerializer, FolderSerializer, PasswordSerializer, ProfileSerializer, SigninSerializer, SignupSerializer
 
 
 def error(message, code=status.HTTP_400_BAD_REQUEST):
@@ -95,64 +90,6 @@ def scan_device(user_agent):
     return "desktop"
 
 
-def send_account_email(user, subject, message):
-    if not user.email:
-        return
-
-    try:
-        send_mail(
-            subject,
-            message,
-            settings.DEFAULT_FROM_EMAIL,
-            [user.email],
-            fail_silently=False,
-        )
-    except Exception:
-        logger.exception(
-            "Could not send account notification email to %s",
-            user.email,
-        )
-
-def issue_email_verification(user):
-    code = f"{secrets.randbelow(1_000_000):06d}"
-
-    EmailVerificationCode.objects.update_or_create(
-        user=user,
-        defaults={
-            "code_hash": make_password(code),
-            "expires_at": timezone.now() + timedelta(minutes=10),
-            "attempts": 0,
-        },
-    )
-
-    try:
-        if not settings.RESEND_API_KEY:
-            raise ValueError("RESEND_API_KEY is not configured.")
-
-        resend.api_key = settings.RESEND_API_KEY
-
-        resend.Emails.send({
-            "from": settings.RESEND_FROM_EMAIL,
-            "to": [user.email],
-            "subject": "Verify your Free QR Generator email",
-            "text": (
-                f"Hi {user.display_name or 'there'},\n\n"
-                f"Your verification code is {code}. "
-                "It expires in 10 minutes.\n\n"
-                "If you did not create this account, "
-                "you can ignore this email."
-            ),
-        })
-
-        return True
-
-    except Exception:
-        logger.exception(
-            "Could not send verification code to %s",
-            user.email,
-        )
-        return False
-
 class HealthView(APIView):
     permission_classes = [AllowAny]
 
@@ -190,74 +127,13 @@ class SignupView(APIView):
             return error(first_validation_error(serializer))
         values = serializer.validated_data
         email = values["email"].strip().lower()
-        user = User.objects.filter(email__iexact=email).first()
-        if user and user.email_verified:
-            return error("An account with this email already exists.", status.HTTP_409_CONFLICT)
-        if user:
-            previous_code = EmailVerificationCode.objects.filter(user=user).first()
-            if previous_code and previous_code.created_at > timezone.now() - timedelta(seconds=60):
-                return error("A verification code was sent recently. Check your inbox or wait a minute before trying again.", status.HTTP_429_TOO_MANY_REQUESTS)
         try:
             with transaction.atomic():
-                if user is None:
-                    user = User.objects.create_user(email=email, password=values["password"], display_name=values["name"].strip(), is_active=False, email_verified=False)
+                user = User.objects.create_user(email=email, password=values["password"], display_name=values["name"].strip())
         except IntegrityError:
             return error("An account with this email already exists.", status.HTTP_409_CONFLICT)
-        if not issue_email_verification(user):
-            return error("We couldn't send your verification code. Check your email settings and try again.", status.HTTP_503_SERVICE_UNAVAILABLE)
-        return Response({"verificationRequired": True, "email": email}, status=status.HTTP_201_CREATED)
-
-
-@method_decorator(csrf_protect, name="dispatch")
-class EmailVerificationView(APIView):
-    permission_classes = [AllowAny]
-    authentication_classes = []
-
-    @extend_schema(request=EmailVerificationSerializer, responses={200: dict, 400: OpenApiResponse(description="Invalid or expired code")})
-    def post(self, request):
-        serializer = EmailVerificationSerializer(data=request.data)
-        if not serializer.is_valid():
-            return error(first_validation_error(serializer))
-        values = serializer.validated_data
-        user = User.objects.filter(email__iexact=values["email"].strip().lower(), email_verified=False).first()
-        record = EmailVerificationCode.objects.filter(user=user).first() if user else None
-        if not user or not record:
-            return error("No pending verification was found. Start signup again to request a new code.")
-        if record.expires_at <= timezone.now():
-            return error("That code has expired. Request a new verification code.")
-        if record.attempts >= 5:
-            return error("Too many incorrect attempts. Request a new verification code.", status.HTTP_429_TOO_MANY_REQUESTS)
-        if not check_password(values["code"], record.code_hash):
-            record.attempts += 1
-            record.save(update_fields=["attempts"])
-            return error("That verification code is incorrect.")
-        user.email_verified = True
-        user.is_active = True
-        user.save(update_fields=["email_verified", "is_active"])
-        record.delete()
         login(request, user, backend="django.contrib.auth.backends.ModelBackend")
-        send_account_email(user, "Welcome to Free QR Generator", f"Congratulations, {user.display_name or 'your account'} is ready. You can now save, organize, and download your QR codes from your workspace.")
-        return Response({"user": user_json(user)})
-
-
-@method_decorator(csrf_protect, name="dispatch")
-class ResendVerificationView(APIView):
-    permission_classes = [AllowAny]
-    authentication_classes = []
-
-    @extend_schema(request=ResendVerificationSerializer, responses={200: dict, 429: OpenApiResponse(description="Resend cooldown")})
-    def post(self, request):
-        serializer = ResendVerificationSerializer(data=request.data)
-        if not serializer.is_valid():
-            return error(first_validation_error(serializer))
-        user = User.objects.filter(email__iexact=serializer.validated_data["email"].strip().lower(), email_verified=False).first()
-        if user:
-            existing = EmailVerificationCode.objects.filter(user=user).first()
-            if existing and existing.created_at > timezone.now() - timedelta(seconds=60):
-                return error("Please wait a minute before requesting another code.", status.HTTP_429_TOO_MANY_REQUESTS)
-            if not issue_email_verification(user):
-                return error("We couldn't send a verification code. Please try again later.", status.HTTP_503_SERVICE_UNAVAILABLE)
-        return Response({"ok": True})
+        return Response({"user": user_json(user)}, status=status.HTTP_201_CREATED)
 
 
 @method_decorator(csrf_protect, name="dispatch")
@@ -271,17 +147,10 @@ class SigninView(APIView):
         if not serializer.is_valid():
             return error("Enter a valid email address and password.")
         values = serializer.validated_data
-        email = values["email"].strip().lower()
-        user = authenticate(request, username=email, password=values["password"])
+        user = authenticate(request, username=values["email"].strip().lower(), password=values["password"])
         if not user:
-            pending_user = User.objects.filter(email__iexact=email, email_verified=False).first()
-            if pending_user and pending_user.check_password(values["password"]):
-                return error("Please verify your email before signing in.", status.HTTP_403_FORBIDDEN)
             return error("Email or password is incorrect. If you created your account with Google, use the Google sign-in button.", status.HTTP_401_UNAUTHORIZED)
-        if not user.email_verified:
-            return error("Please verify your email before signing in.", status.HTTP_403_FORBIDDEN)
         login(request, user)
-        send_account_email(user, "New sign-in to Free QR Generator", f"Hi {user.display_name or 'there'},\n\nYour Free QR Generator account was just signed in to. If this wasn't you, change your password and contact support.togethere@gmail.com.")
         return Response({"user": user_json(user)})
 
 
@@ -655,20 +524,13 @@ def google_callback(request):
             raise ValueError("Google identity claims could not be verified.")
         email = claims["email"].strip().lower()
         user = User.objects.filter(google_sub=claims["sub"]).first() or User.objects.filter(email__iexact=email).first()
-        is_new_user = user is None
         if not user:
-            user = User.objects.create_user(email=email, display_name=str(claims.get("name") or email.split("@", 1)[0])[:100], email_verified=True, is_active=True)
+            user = User.objects.create_user(email=email, display_name=str(claims.get("name") or email.split("@", 1)[0])[:100])
         user.google_sub = claims["sub"]
-        user.email_verified = True
-        user.is_active = True
         if not user.display_name and claims.get("name"):
             user.display_name = str(claims["name"])[:100]
-        user.save(update_fields=["google_sub", "display_name", "email_verified", "is_active"])
+        user.save(update_fields=["google_sub", "display_name"])
         login(request, user, backend="django.contrib.auth.backends.ModelBackend")
-        if is_new_user:
-            send_account_email(user, "Welcome to Free QR Generator", f"Congratulations, {user.display_name or 'your account'} is ready. You can now save, organize, and download your QR codes from your workspace.")
-        else:
-            send_account_email(user, "New sign-in to Free QR Generator", f"Hi {user.display_name or 'there'},\n\nYour Free QR Generator account was just signed in to. If this wasn't you, contact support.togethere@gmail.com.")
         result = "success"
     except (requests.RequestException, KeyError, ValueError, TypeError) as exc:
         # Do not expose upstream tokens or provider response details to the browser.
