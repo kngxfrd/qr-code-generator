@@ -40,7 +40,7 @@ SUPPORT_EMAIL = os.getenv(
     "SUPPORT_EMAIL",
     "support.togethere@gmail.com",
 )
-
+EMAIL_TIMEOUT = int(os.getenv("EMAIL_TIMEOUT", "10"))
 
 INSTALLED_APPS = [
     "django.contrib.admin",

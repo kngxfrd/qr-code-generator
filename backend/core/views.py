@@ -95,11 +95,22 @@ def scan_device(user_agent):
 
 
 def send_account_email(user, subject, message):
-    try:
-        send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [user.email], fail_silently=False)
-    except Exception:
-        logger.exception("Could not send account email to %s", user.email)
+    if not user.email:
+        return
 
+    try:
+        send_mail(
+            subject,
+            message,
+            settings.DEFAULT_FROM_EMAIL,
+            [user.email],
+            fail_silently=False,
+        )
+    except Exception:
+        logger.exception(
+            "Could not send account notification email to %s",
+            user.email,
+        )
 
 def issue_email_verification(user):
     code = f"{secrets.randbelow(1_000_000):06d}"
