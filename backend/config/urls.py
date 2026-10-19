@@ -64,7 +64,10 @@ urlpatterns += [
     re_path(
         r"^favicon\.png$",
         serve,
-        {"document_root": settings.FRONTEND_DIST},
+        {
+            "path": "favicon.png",
+            "document_root": settings.FRONTEND_DIST,
+        },
     ),
 ]
 
