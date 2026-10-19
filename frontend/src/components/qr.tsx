@@ -23,6 +23,13 @@ export function qrOptions(payload: string, design: QRDesign, size = 320): QRCode
   };
 }
 
+export async function renderQrSvg(payload: string, design: QRDesign, size = 1000) {
+  const qr = new QRCodeStyling(qrOptions(payload, design, size));
+  const blob = await qr.getRawData('svg');
+  if (!blob) throw new Error('Could not render this QR code.');
+  return blob.text();
+}
+
 export function useRenderedQr(payload: string, design: QRDesign) {
   const [svg, setSvg] = useState('');
   const safePayload = payload || 'https://freeqrgenerator.com';

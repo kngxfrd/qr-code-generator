@@ -12,9 +12,12 @@ from backend.core import views
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/health", views.HealthView.as_view(), name="health"),
+    path("api/config", views.PublicConfigView.as_view(), name="public-config"),
     path("api/csrf/", views.CsrfView.as_view(), name="csrf"),
     path("api/auth/signup", views.SignupView.as_view(), name="signup"),
     path("api/auth/signin", views.SigninView.as_view(), name="signin"),
+    path("api/auth/verify-email", views.EmailVerificationView.as_view(), name="verify-email"),
+    path("api/auth/verify-email/resend", views.ResendVerificationView.as_view(), name="resend-email-verification"),
     path("api/auth/signout", views.SignoutView.as_view(), name="signout"),
     path("api/auth/me", views.MeView.as_view(), name="me"),
     path("api/billing/plans", views.BillingPlansView.as_view(), name="billing-plans"),

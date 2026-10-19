@@ -1,4 +1,5 @@
 from django.utils import timezone
+from django.conf import settings
 
 PLANS = [
     {"id": "starter", "name": "Starter", "monthly": 5, "quarterly": 15, "annual": 48, "dynamicCodes": 5, "monthlyScans": 1000, "description": "For a few links you may need to update later.", "features": ["5 editable dynamic QR codes", "Up to 1,000 scans per month", "Scan time, device and coarse country", "Change destinations after printing"]},
@@ -48,6 +49,7 @@ def code_json(code):
         "id": str(code.id), "userId": str(code.user_id), "name": code.name, "type": code.type, "payload": code.payload,
         "fields": code.fields, "svg": code.svg, "format": code.format, "design": code.design,
         "folderId": str(code.folder_id) if code.folder_id else None, "status": code.status, "dynamic": code.dynamic,
+        "redirectUrl": f"{settings.QR_REDIRECT_ORIGIN}/r/{code.id}" if code.dynamic else None,
         "scanCount": code.scan_count, "lastScannedAt": code.last_scanned_at.isoformat() if code.last_scanned_at else None,
         "createdAt": code.created_at.isoformat(), "updatedAt": code.updated_at.isoformat(),
     }
